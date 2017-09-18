@@ -111,6 +111,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 print("get URLs From Flickers")
                 self.downloaded = true
                 
+                debugPrint("# of photos downlaoded",self.appDelegate.parsedFlickerPhotos.count )
+                
                 for i in 0...self.appDelegate.parsedFlickerPhotos.count - 1 {
                     phasingFromFlickerImage(self.appDelegate.parsedFlickerPhotos[i]){ (image, success, error) in
                         if success {
@@ -121,18 +123,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                             let newPhoto = Photo(photoToInsert, self.managedObjectContext)
                             newPhoto.pin = self.selectedPinfromCoredata
                             newPhoto.url = self.appDelegate.parsedFlickerPhotos[i]
-                            
-                            do {
-                                try self.managedObjectContext.save()
-                                print(i)
-                            } catch {
-                                print("error\(error.localizedDescription)")
-                            }
-                            
                             self.notificationCenter.post(name: NSNotification.Name(rawValue: "simple-notification"), object: nil)
                         }
                     }
                 }
+                
+                do {
+                    try self.managedObjectContext.save()
+                } catch {
+                    print("error\(error.localizedDescription)")
+                }
+
+                
                 self.isAlreadyStored = true
             } else {
                 //Phasing Fail
@@ -146,8 +148,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         
         if isdelete {
             deletePhotos(toDeletePhoto)
+            self.photos.remove(at: self.index.item)
             collectionView.deleteItems(at: [self.index])
-
             
             self.collectionView.reloadData()
             isdelete = false
@@ -166,24 +168,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         let photoArrayFromCoreData = Array(self.selectedPinfromCoredata.photos!)
 
         self.toDeletePhoto = (photoArrayFromCoreData[indexPath[1]] as! Photo)
-    }
-    
-    func setSelectedRegion() -> MKCoordinateRegion {
-        let span = MKCoordinateSpanMake(0.5, 0.5)
-        let annotation = MKPointAnnotation()
-    
-        var location = CLLocationCoordinate2D()
-        location.latitude = self.selectedPin.latitude
-        location.longitude = self.selectedPin.longitude
         
-        annotation.coordinate = location
-        selectedMapView.addAnnotation(annotation)
-        
-        return MKCoordinateRegion(center: location, span:span)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.photos.count
+        print(self.toDeletePhoto)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -216,6 +202,24 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
         //#warning Incomplete method implementation -- Return the number of sections
         return 3
+    }
+    
+    func setSelectedRegion() -> MKCoordinateRegion {
+        let span = MKCoordinateSpanMake(0.5, 0.5)
+        let annotation = MKPointAnnotation()
+        
+        var location = CLLocationCoordinate2D()
+        location.latitude = self.selectedPin.latitude
+        location.longitude = self.selectedPin.longitude
+        
+        annotation.coordinate = location
+        selectedMapView.addAnnotation(annotation)
+        
+        return MKCoordinateRegion(center: location, span:span)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.photos.count
     }
     
 }
